@@ -1,9 +1,10 @@
 ﻿import pandas as pd
 import httpx
 from bs4 import BeautifulSoup
+import numpy as np
 
 def load_data():
-    df = pd.read_csv("data/Lamine-Yamal.csv")
+    df = pd.read_csv("data/Lamine-Yamal_summary.csv")
     df = df.rename(columns={
         "Comp": "competition",
         "Pos": "position",
@@ -13,7 +14,7 @@ def load_data():
         "PK": "penalty_kicks_made",
         "PKatt": "penalty_kicks_attempted",
         "Sh": "shots_total",
-        "Sot": "shots_on_target",
+        "SoT": "shots_on_target",
         "CrdY": "yellow_cards",
         "CrdR": "red_cards",
         "Tkl": "tackles",
@@ -45,13 +46,33 @@ def load_data():
     return df
 
 
+def load_defense_data():
+    df = pd.read_csv("data/Lamine-Yamal_defense.csv")
+    df = df[["Date","Tkl","TklW", "Tkl.1","Att"]].rename(columns={
+                                                    "Tkl": "num_players_tackled",
+                                                    "TklW": "tackles_won",
+                                                    "Tkl.1": "dribles_tackled",
+                                                    "Att": "attempts",
+                                                    })
+
+    df = df[df["num_players_tackled"] != "On matchday squad, but did not play"]
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
+    df = df.dropna(subset=["Date"])
+    for col in ["num_players_tackled", "tackles_won","dribles_tackled", "attempts"]:
+        df[col] = df[col].astype("float64")
+    df.columns = [str(el).lower() for el in df.columns.to_list()]
+    return df
+
+
+
 def get_player_info_transfermarket(player_name: str):
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
     try:
         search_url = f"https://www.transfermarkt.com/schnellsuche/ergebnis/schnellsuche?query={player_name}"
-        response = httpx.get(search_url, headers=headers, timeout=10)
+        response = httpx.get(search_url, headers=headers, timeout=20)
         if response.status_code != 200:
             raise ValueError("Error during player search")
 
@@ -78,14 +99,26 @@ def get_player_info_transfermarket(player_name: str):
         image_link = player_soup.find(class_="data-header__profile-image")["src"]
         shirt_number = player_soup.find(class_="data-header__shirt-number").text.strip()
         name = player_soup.find(class_="data-header__headline-wrapper").find("strong").text
-        info_result.append({"label": "image", "content" : image_link})
+
+        club_img = player_soup.find(class_="data-header__box__club-link").find("img")["srcset"]\
+            .split(",")[0].strip().split(" ")[0]
+        club_img_alt = player_soup.find(class_="data-header__box__club-link").find("img")["alt"]
+
+        league_img = player_soup.find(class_="data-header__league-link").find("img")["src"].replace("verytiny", "header")
+        league_img_alt = player_soup.find(class_="data-header__league-link").find("img")["alt"]
+
+        info_result.append({"label": "league_image", "content" : league_img, "alt": league_img_alt})
+        info_result.append({"label": "club_image", "content" : club_img, "alt": club_img_alt})
+        info_result.append({"label": "player_image", "content" : image_link})
         info_result.append({"label": "Shirt number", "content" : shirt_number})
         info_result.append({"label": "Name", "content": name})
-
-        print(info_result)
         return {"info": info_result}
     except Exception as e:
         raise ValueError("Error: {e}")
 
 player_info = get_player_info_transfermarket("Lamine Yamal")
 data = load_data()
+defense_data = load_defense_data()
+
+
+data = pd.merge(data, defense_data, on="date", how="left")

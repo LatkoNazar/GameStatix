@@ -25,7 +25,7 @@ def get_table(html):
     return table_df
 
 
-def get_fbref_page():
+def get_fbref_page(page_name):
     print("START")
     options = Options()
     options.add_argument("--headless")
@@ -49,7 +49,7 @@ def get_fbref_page():
         for season in seasons:
             driver = webdriver.Chrome(options=options)
             print(season)
-            url = f"https://fbref.com/en/players/82ec26c1/matchlogs/{season}/Lamine-Yamal-Match-Logs"
+            url = f"https://fbref.com/en/players/82ec26c1/matchlogs/{season}/{page_name}/Lamine-Yamal-Match-Logs"
             driver.get(url)
             html = driver.page_source
             table_list = get_table(html)
@@ -60,7 +60,7 @@ def get_fbref_page():
                 all_matches = pd.concat([all_matches, df], ignore_index=True)
             driver.quit()
         all_matches.to_csv(
-            "downloads/Lamine-Yamal.csv",
+            f"data/Lamine-Yamal_{page_name}.csv",
             index=False,
             encoding="utf-8-sig",
             quoting=csv.QUOTE_ALL,
@@ -70,4 +70,7 @@ def get_fbref_page():
         print(e)
         driver.quit()
 
-get_fbref_page()
+get_fbref_page("summary")
+get_fbref_page("gca")
+get_fbref_page("defense")
+

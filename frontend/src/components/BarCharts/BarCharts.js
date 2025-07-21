@@ -1,5 +1,5 @@
 ﻿import { useRef, useEffect, useState, useContext } from "react";
-import { FiltersContext } from "../../pages/Dashboard/Dashboard";
+import { DataFiltersContext } from "../../pages/Dashboard/Dashboard";
 import {
     Chart,
     CategoryScale,
@@ -21,34 +21,12 @@ Chart.register(
     BarController
 );
 
-export default function GoalsPerSeasonBarChart() {
-    const { filters, setFilters } = useContext(FiltersContext);
-    const [data, setData] = useState(null);
+export default function BarCharts(props) {
+    const { data, setData, filters, setFilters } =
+        useContext(DataFiltersContext);
     const chartRef = useRef(null);
     const chartInstance = useRef(null);
-
-    useEffect(() => {
-        async function getGoalsPerSeason() {
-            const response = await fetch(
-                "http://localhost:5000/bar-charts/goals-per-season",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(filters || []),
-                }
-            );
-
-            if (!response.ok) {
-                console.error("Error response", response.status);
-                return;
-            }
-
-            const json = await response.json();
-            setData(json);
-        }
-        getGoalsPerSeason();
-    }, [filters]);
-
+    console.log("BAR PROPS:", props.data);
     useEffect(() => {
         if (!data || !chartRef.current) return;
 
@@ -59,12 +37,12 @@ export default function GoalsPerSeasonBarChart() {
         chartInstance.current = new Chart(ctx, {
             type: "bar",
             data: {
-                labels: data.Result,
+                labels: props.data.labels,
                 datasets: [
                     {
-                        label: "Goals per season",
-                        data: data.Count,
-                        backgroundColor: ["blue", "green", "red"],
+                        label: props.label,
+                        data: props.data.values,
+                        backgroundColor: ["black"],
                         borderWidth: 1,
                     },
                 ],
@@ -73,29 +51,38 @@ export default function GoalsPerSeasonBarChart() {
                 onClick: (event, elements, chart) => {
                     if (elements.length > 0) {
                         const index = elements[0].index;
-                        const label = data.Result[index];
+                        const label = props.data.labels[index];
                         const exists = filters.some(
                             (item) =>
-                                item.name === "season" && item.value === label
+                                item.name === props.colToFilterBy &&
+                                item.value === label
                         );
-
+                        console.log({
+                            name: props.colToFilterBy,
+                            value: label,
+                        });
                         if (!exists) {
                             setFilters((prev) => [
                                 ...prev,
-                                { name: "season", value: label },
+                                { name: props.colToFilterBy, value: label },
                             ]);
                         } else {
                             setFilters((prev) =>
                                 prev.filter(
                                     (item) =>
                                         !(
-                                            item.name === "season" &&
+                                            item.name === props.colToFilterBy &&
                                             item.value === label
                                         )
                                 )
                             );
                         }
                     }
+                },
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
                 },
             },
         });
@@ -110,6 +97,7 @@ export default function GoalsPerSeasonBarChart() {
         //     justifyContent: "center",
         // }}
         >
+            <p>{props.label}</p>
             <canvas ref={chartRef} height={300} />
         </div>
     );

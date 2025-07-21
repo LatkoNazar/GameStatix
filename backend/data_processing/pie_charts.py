@@ -11,20 +11,22 @@ from schemas.filter_schema import FilterSchema
 
 router = APIRouter(prefix="/pie-charts")
 
-@router.post("/wdl")
+@router.post("/all-pie-data")
 async def get_wdl_data(filters: Optional[List[FilterSchema]] = None):
     new_data = data.copy()
     if filters:
         for filter in filters:
             new_data = new_data[new_data[filter.name] == filter.value]
-    labels = ["W", "D", "L"]
-    values = [
+    wdl_labels = ["W", "D", "L"]
+    wdl_values = [
         int(new_data[new_data["result"] == "W"]["result"].count()),
         int(new_data[new_data["result"] == "D"]["result"].count()),
         int(new_data[new_data["result"] == "L"]["result"].count())
     ]
-    df_chart_json = {
-        "Result": labels,
-        "Count": values
-    }
-    return JSONResponse(content=df_chart_json)
+
+    return JSONResponse(content={
+        "wdl_data": {
+            "result": wdl_labels,
+            "counts": wdl_values
+        }
+    })

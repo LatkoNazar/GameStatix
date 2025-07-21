@@ -1,36 +1,14 @@
 import { useRef, useEffect, useState, useContext } from "react";
-import { FiltersContext } from "../../pages/Dashboard/Dashboard";
+import { DataFiltersContext } from "../../pages/Dashboard/Dashboard";
 import { Chart, ArcElement, Tooltip, Legend, PieController } from "chart.js";
 
 Chart.register(ArcElement, Tooltip, Legend, PieController);
 
-export default function PieChartWDL() {
-    const { filters, setFilters } = useContext(FiltersContext);
-    const [data, setData] = useState(null);
+export default function PieChartWDL(props) {
+    const { filters, setFilters, data, setData } =
+        useContext(DataFiltersContext);
     const chartRef = useRef(null);
     const chartInstance = useRef(null);
-
-    useEffect(() => {
-        async function getWDL() {
-            const response = await fetch(
-                "http://localhost:5000/pie-charts/wdl",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(filters || []),
-                }
-            );
-
-            if (!response.ok) {
-                console.error("Error response", response.status);
-                return;
-            }
-
-            const json = await response.json();
-            setData(json);
-        }
-        getWDL();
-    }, [filters]);
 
     useEffect(() => {
         if (!data || !chartRef.current) return;
@@ -42,7 +20,7 @@ export default function PieChartWDL() {
         chartInstance.current = new Chart(ctx, {
             type: "pie",
             data: {
-                labels: data.Result.map((item) => {
+                labels: props.data.labels.map((item) => {
                     switch (item) {
                         case "W":
                             return "Win";
@@ -56,8 +34,8 @@ export default function PieChartWDL() {
                 }),
                 datasets: [
                     {
-                        label: "Wins / Draws / Loses",
-                        data: data.Count,
+                        label: props.label,
+                        data: props.data.values,
                         backgroundColor: ["blue", "green", "red"],
                         borderWidth: 1,
                     },
@@ -67,22 +45,23 @@ export default function PieChartWDL() {
                 onClick: (event, elements, chart) => {
                     if (elements.length > 0) {
                         const index = elements[0].index;
-                        const label = data.Result[index];
+                        const label = props.data.labels[index];
                         const exists = filters.some(
                             (item) =>
-                                item.name === "result" && item.value === label
+                                item.name === props.colToFilterBy &&
+                                item.value === label
                         );
                         if (!exists) {
                             setFilters((prev) => [
                                 ...prev,
-                                { name: "result", value: label },
+                                { name: props.colToFilterBy, value: label },
                             ]);
                         } else {
                             setFilters((prev) =>
                                 prev.filter(
                                     (item) =>
                                         !(
-                                            item.name === "result" &&
+                                            item.name === props.colToFilterBy &&
                                             item.value === label
                                         )
                                 )
@@ -90,12 +69,15 @@ export default function PieChartWDL() {
                         }
                     }
                 },
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                },
             },
         });
     }, [data]);
-    useEffect(() => {
-        console.log("Filters updated:", filters);
-    }, [filters]);
+
     return (
         <div
         // style={{
@@ -105,6 +87,7 @@ export default function PieChartWDL() {
         //     justifyContent: "center",
         // }}
         >
+            <p>{props.label}</p>
             <canvas ref={chartRef} height={300} />
         </div>
     );

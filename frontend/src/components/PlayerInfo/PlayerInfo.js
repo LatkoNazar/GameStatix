@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from "react";
+import "./PlayerInfo.css";
 
 export default function PlayerInfo() {
     const [playerInfo, setPlayerInfo] = useState(null);
@@ -23,26 +24,61 @@ export default function PlayerInfo() {
 
     return (
         <div className="info-container">
-            <h1>Player Info</h1>
-
-            <img
-                src={playerInfo.find((item) => item.label === "image")?.content}
-                alt={
-                    playerInfo.find((item) => item.label === "Name")?.content ||
-                    "Player"
-                }
+            <div class="playerIMG">
+                <h1 style={{ marginTop: 0 }}>
+                    {playerInfo.find((item) => item.label === "Name")
+                        ?.content || "N/A"}
+                </h1>
+                <img
+                    src={
+                        playerInfo.find((item) => item.label === "player_image")
+                            ?.content
+                    }
+                    alt={
+                        playerInfo.find((item) => item.label === "Name")
+                            ?.content || "Player"
+                    }
+                    style={{
+                        maxWidth: "200px",
+                        borderRadius: "8px",
+                        marginBottom: "20px",
+                    }}
+                />
+            </div>
+            <div
                 style={{
-                    maxWidth: "200px",
-                    borderRadius: "8px",
-                    marginBottom: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                 }}
-            />
-
-            <p>
-                <strong>Name:</strong>{" "}
-                {playerInfo.find((item) => item.label === "Name")?.content ||
-                    "N/A"}
-            </p>
+            >
+                <strong style={{ marginRight: 5 }}>Club:</strong>{" "}
+                <img
+                    src={
+                        playerInfo.find((item) => item.label === "club_image")
+                            ?.content
+                    }
+                    alt={
+                        playerInfo.find((item) => item.label === "club_image")
+                            ?.alt
+                    }
+                    width="50"
+                    height="50"
+                />
+                <strong style={{ marginRight: 5 }}>League:</strong>{" "}
+                <img
+                    src={
+                        playerInfo.find((item) => item.label === "league_image")
+                            ?.content
+                    }
+                    alt={
+                        playerInfo.find((item) => item.label === "league_image")
+                            ?.alt
+                    }
+                    width="50"
+                    height="50"
+                />
+            </div>
 
             <p>
                 <strong>Shirt number:</strong>{" "}
@@ -53,7 +89,9 @@ export default function PlayerInfo() {
             {playerInfo
                 .filter(
                     (item) =>
-                        item.label !== "image" &&
+                        item.label !== "player_image" &&
+                        item.label !== "club_image" &&
+                        item.label !== "league_image" &&
                         item.label !== "Name" &&
                         item.label !== "Shirt number"
                 )

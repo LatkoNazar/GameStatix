@@ -6,6 +6,8 @@ import pandas as pd
 from data_processing.pie_charts import router as pie_charts_router
 from data_processing.player_info import router as player_info_router
 from data_processing.bar_charts import router as bar_charts_router
+from data_processing.radar_charts import router as radar_charts_router
+
 def create_app() -> FastAPI:
     app = FastAPI()
     app.add_middleware(
@@ -17,6 +19,7 @@ def create_app() -> FastAPI:
     app.include_router(pie_charts_router)
     app.include_router(bar_charts_router)
     app.include_router(player_info_router)
+    app.include_router(radar_charts_router)
     return app
 
 app = create_app()
